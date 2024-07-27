@@ -45,51 +45,51 @@ int SetupCallbacks(void){
 }
 
 void init(void) {
-	void *video_ram = 0;
-	void *disp_ram  = video_ram;
-	void *draw_ram  = disp_ram + BUFF_WIDTH * SCREEN_HEIGHT * 4;
+    void *video_ram = 0;
+    void *disp_ram  = video_ram;
+    void *draw_ram  = disp_ram + BUFF_WIDTH * SCREEN_HEIGHT * 4;
 
-	sceGuInit();
-	sceGuStart(GU_DIRECT, list);
-	{
+    sceGuInit();
+    sceGuStart(GU_DIRECT, list);
+    {
         sceGuDispBuffer(SCREEN_WIDTH, SCREEN_HEIGHT, disp_ram, BUFF_WIDTH);
-		sceGuDrawBuffer(GU_PSM_8888, draw_ram, BUFF_WIDTH);
+        sceGuDrawBuffer(GU_PSM_8888, draw_ram, BUFF_WIDTH);
         sceGuOffset(0, 0);
         sceGuViewport(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 
-                      SCREEN_WIDTH, SCREEN_HEIGHT);
-		sceGuScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-		sceGuEnable(GU_SCISSOR_TEST);
+                SCREEN_WIDTH, SCREEN_HEIGHT);
+        sceGuScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        sceGuEnable(GU_SCISSOR_TEST);
         sceGuShadeModel(GU_SMOOTH);
         sceGuDisplay(GU_TRUE);
-	} 
-	sceGuFinish();
-	sceGuSync(0, 0);
-	sceDisplayWaitVblank();
-	sceGuSwapBuffers();
+    } 
+    sceGuFinish();
+    sceGuSync(0, 0);
+    sceDisplayWaitVblank();
+    sceGuSwapBuffers();
 }
 
 void display(){
-	sceGuStart(GU_DIRECT, list);
+    sceGuStart(GU_DIRECT, list);
 
-	sceGumMatrixMode(GU_VIEW);
-	sceGumLoadIdentity();
+    sceGumMatrixMode(GU_VIEW);
+    sceGumLoadIdentity();
 
-	sceGumMatrixMode(GU_PROJECTION);
-	sceGumLoadIdentity();
-	sceGumPerspective(90, 16.0/9.0, 1, 100);
+    sceGumMatrixMode(GU_PROJECTION);
+    sceGumLoadIdentity();
+    sceGumPerspective(90, 16.0/9.0, 1, 100);
 
-	sceGumMatrixMode(GU_MODEL);
-	sceGumLoadIdentity();
+    sceGumMatrixMode(GU_MODEL);
+    sceGumLoadIdentity();
 
     sceGuClearColor(0xFF2B353B);
-	sceGuClear(GU_COLOR_BUFFER_BIT|GU_DEPTH_BUFFER_BIT);
+    sceGuClear(GU_COLOR_BUFFER_BIT|GU_DEPTH_BUFFER_BIT);
 
     sceGumDrawArray(GU_TRIANGLES, GU_COLOR_8888|GU_VERTEX_32BITF|GU_TRANSFORM_3D, 3, 0, vertices);
 
-	sceGuFinish();
-	sceGuSync(0, 0);
-	sceDisplayWaitVblank();
-	sceGuSwapBuffers();
+    sceGuFinish();
+    sceGuSync(0, 0);
+    sceDisplayWaitVblank();
+    sceGuSwapBuffers();
 
 }
 
@@ -97,7 +97,7 @@ int main(){
     SetupCallbacks();
     int running = 1;
     init();
-    
+
     while(running) {
         display();
     }

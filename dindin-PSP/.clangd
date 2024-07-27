@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-I/usr/psp/sdk/include, -I/usr/psp/include]
