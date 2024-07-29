@@ -1,7 +1,7 @@
 TARGET=main
 OBJS = ./src/main.o ./src/callbacks.o ./src/graphics.o
 CFLAGS = -Wall -Wextra 
-LIBS = -lpspgu -lpspgum -lm 
+LIBS = -lpspgu -lpspgum -lm -lfreetype 
 
 EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = Tilemaps

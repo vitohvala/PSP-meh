@@ -196,7 +196,7 @@ void apply_camera(const Camera2D *cam){
 }
 
 //Tilemaps
-Tilemap *create_tilemap(TextureAtlas atlas, Texture *tex, int sizex, int sizey){
+Tilemap *create_tilemap(TextureAtlas atlas, Texture *tex, int sizex, int sizey, float scalex, float scaley){
     Tilemap *t = (Tilemap*)malloc(sizeof(Tilemap));
     if(!t) return NULL;
 
@@ -224,8 +224,8 @@ Tilemap *create_tilemap(TextureAtlas atlas, Texture *tex, int sizex, int sizey){
     t->w = sizex;
     t->h = sizey;
     t->mesh->index_count = sizex * sizey * 6;
-    t->scale_x = 16.0f;
-    t->scale_y = 16.0f;
+    t->scale_x = scalex;
+    t->scale_y = scaley;
 
     return t;
 }
@@ -283,10 +283,10 @@ void build_tilemap(Tilemap *t){
         float tw = tx + 1.0f;
         float th = ty + 1.0f;
 
-        ((Vertex*)t->mesh->data)[i * 4 + 0] = create_vert(buf[0], buf[1], 0xFFFFFFFF, tx, ty, 0.0f); 
-        ((Vertex*)t->mesh->data)[i * 4 + 1] = create_vert(buf[2], buf[3], 0xFFFFFFFF, tx, th, 0.0f); 
-        ((Vertex*)t->mesh->data)[i * 4 + 2] = create_vert(buf[4], buf[5], 0xFFFFFFFF, tw, th, 0.0f); 
-        ((Vertex*)t->mesh->data)[i * 4 + 3] = create_vert(buf[6], buf[7], 0xFFFFFFFF, tw, ty, 0.0f); 
+        ((Vertex*)t->mesh->data)[i * 4 + 0] = create_vert(buf[0], buf[1], 0xFFFFFFFF, tx, th, 0.0f); 
+        ((Vertex*)t->mesh->data)[i * 4 + 1] = create_vert(buf[2], buf[3], 0xFFFFFFFF, tx, ty, 0.0f); 
+        ((Vertex*)t->mesh->data)[i * 4 + 2] = create_vert(buf[4], buf[5], 0xFFFFFFFF, tw, ty, 0.0f); 
+        ((Vertex*)t->mesh->data)[i * 4 + 3] = create_vert(buf[6], buf[7], 0xFFFFFFFF, tw, th, 0.0f); 
         
         t->mesh->indices[i * 6 + 0] = (i * 4) + 0;
         t->mesh->indices[i * 6 + 1] = (i * 4) + 1;

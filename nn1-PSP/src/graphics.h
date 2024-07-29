@@ -68,7 +68,6 @@ typedef struct {
 } Tilemap;
 
 
-
 Mesh *create_mesh(u32 vcount, u32 index_count);
 Vertex create_vert(float u, float v, unsigned int color, float x, float y, float z);
 Sprite *create_sprite(float x, float y, float sx, float sy, Texture *tex);
@@ -92,7 +91,7 @@ void clear(unsigned int Color);
 void apply_camera(const Camera2D *cam);
 float get_frame_time();
 void get_uv_index(TextureAtlas *atlas, float *buf, int index);
-Tilemap *create_tilemap(TextureAtlas atlas, Texture *tex, int sizex, int sizey);
+Tilemap *create_tilemap(TextureAtlas atlas, Texture *tex, int sizex, int sizey, float scalex, float scaley);
 void destroy_tilemap(Tilemap *t);
 void draw_tilemap(Tilemap *t);
 void build_tilemap(Tilemap *t);
