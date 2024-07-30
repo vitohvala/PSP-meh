@@ -5,7 +5,10 @@
 #include <psprtc.h>
 #include <math.h>
 
+#include "pgeFont.h"
+#include "graphics.h"
 #include "callbacks.h"
+#include "psptypes.h"
 
 PSP_MODULE_INFO("dindin", 0, 1, 1);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
@@ -14,81 +17,18 @@ PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
 #define RAYWHITE 0xFFF5F5F5
 #define GREEN    0xFF00E430
 #define BLACK    0xFF000000
-#define SCREEN_WIDTH  480
-#define SCREEN_HEIGHT 272
-#define BUF_WIDTH     512
-
-typedef struct {
-    float x, y;
-    float width, height;
-} Rectangle;
-
-typedef struct {
-    float x, y;
-}Vector2;
 
 typedef struct{
-    Vector2 p_vel;
+    ScePspFVector2 p_vel;
     float o_vel;
     int o_index;
     int min;
 } Helpers;
 
-typedef struct {
-    float u, v;
-    unsigned int color;
-    float x, y, z;
-}Vertex;
+typedef ScePspFRect Rectangle;
 
 SceKernelUtilsMt19937Context ctx;
 static unsigned int __attribute__((aligned(16))) list[262144];
-
-void init_graphics(){
-    sceGuInit();
-    sceGuStart(GU_DIRECT, list);
-
-    sceGuDrawBuffer(GU_PSM_8888, (void*)0, BUF_WIDTH);
-    sceGuDispBuffer(SCREEN_WIDTH, SCREEN_HEIGHT, (void*)0x88000, BUF_WIDTH);
-    sceGuDepthBuffer((void*)0x110000, BUF_WIDTH);
-    sceGuOffset(2048 - (SCREEN_WIDTH/2), 2048 - (SCREEN_HEIGHT/2));
-    sceGuViewport(2048, 2048, SCREEN_WIDTH, SCREEN_HEIGHT);
-    sceGuDepthRange(0xc350, 0x2710);
-    sceGuScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    sceGuEnable(GU_SCISSOR_TEST);
-    sceGuFrontFace(GU_CW);
-    sceGuShadeModel(GU_SMOOTH);
-    sceGuEnable(GU_CULL_FACE);
-    sceGuEnable(GU_TEXTURE_2D);
-    sceGuEnable(GU_CLIP_PLANES);
-
-    sceGuFinish();
-    sceGuSync(0, 0);
-    sceDisplayWaitVblankStart();
-    sceGuDisplay(GU_TRUE);
-}
-
-void draw_rectangle(Rectangle *p, unsigned int color) {
-    Vertex* v = (Vertex*)sceGuGetMemory(2 * sizeof(Vertex));
-    v[0].color = color;  
-    v[0].x = p->x;
-    v[0].y = p->y;
-    v[0].z = v[0].u = v[0].v = 0;
-    v[1].color = color; 
-    v[1].x = p->x + p->width;
-    v[1].y = p->y + p->height;
-    v[1].z = v[1].u = v[1].v = 1;
-
-    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, v);
-}
-
-float get_frame_time(){
-    u64 tick;
-    static u64 last_tick;
-    sceRtcGetCurrentTick(&tick);
-    float dt = (tick - last_tick) / (float)sceRtcGetTickResolution();
-    last_tick = tick;
-    return dt;
-}
 
 void init_random() {
     u32 tick = sceKernelGetSystemTimeLow();
@@ -109,30 +49,34 @@ void init(Rectangle *p, Rectangle *o, Helpers *h) {
     h->p_vel.x = h->p_vel.y = 0;
     p->x = 0;
     p->y = 245;
-    p->width = 27;
-    p->height = 27;
-    h->o_vel = 250;
+    p->w = 27;
+    p->h = 27;
+    h->o_vel = 200;
     h->o_index = 2;
     h->min = 200;
     o[0].x = SCREEN_WIDTH ;
     o[0].y = get_y();
-    o[0].width = get_random(17, 24);
-    o[0].height = 30;
+    o[0].w = get_random(17, 24);
+    o[0].h = 30;
     for (int i = 1; i < 3; i++) {
         float tmp = o[i - 1].x;
         o[i].x = get_random(tmp + h->min, tmp + h->min + 50);
         o[i].y = get_y();
-        o[i].width = get_random(17, 25);
-        o[i].height = 30;
+        o[i].w = get_random(17, 25);
+        o[i].h = 30;
     }
 }
 
 u8 CheckCollisionRecs(Rectangle rec1, Rectangle rec2) {
-    return ((rec1.x < (rec2.x + rec2.width) && (rec1.x + rec1.width) > rec2.x) &&
-            (rec1.y < (rec2.y + rec2.height) && (rec1.y + rec1.height) > rec2.y));
+    return ((rec1.x < (rec2.x + rec2.w) && (rec1.x + rec1.w) > rec2.x) &&
+            (rec1.y < (rec2.y + rec2.h) && (rec1.y + rec1.h) > rec2.y));
 }
 
-
+int get_numlen(int n) {
+    int l = 1;
+    while((n/10) > 9) l++;
+    return l;
+}
 
 int main() {
     Rectangle player = { 0, 245, 27, 27};
@@ -142,13 +86,52 @@ int main() {
     init(&player, obstacles, &h);
     init_random();
     setupCallbacks();
-    init_graphics();
+    init_graphics(list, PRIM_RECT);
     float dt = get_frame_time();
+    sceGumMatrixMode(GU_PROJECTION); 
+    sceGumLoadIdentity();
+    sceGumOrtho(0.f, 480.f, 272.f, 0.f, -10.0f, 10.0f);
+
+    sceGumMatrixMode(GU_VIEW);
+    sceGumLoadIdentity();
+    sceGumMatrixMode(GU_MODEL);
+    sceGumLoadIdentity();
+    int score;
+    u8 death = 0;
+    u8 f = 0;
+
+    pgeFontInit();
+    pgeFont *ry = pgeFontLoad("ps10.ttf", 12, PGE_FONT_SIZE_PIXELS, 128);
 
     while(1){
         SceCtrlData pad;
         sceCtrlReadBufferPositive(&pad, 1);
         dt = get_frame_time();
+        
+        if(death) {
+            f++;
+            start_frame(list);
+            sceGuDisable(GU_DEPTH_TEST);
+            sceGuDisable(GU_TEXTURE_2D);
+            clear(RAYWHITE);
+
+            draw_rectangle(0, 90, 480, 50, BLACK);
+            draw_rectangle_rec(player, GREEN);
+
+            for(int i = 0; i < 3; i++){
+                draw_rectangle_rec(obstacles[i], BLACK);
+            }
+            pgeFontActivate(ry);
+            pgeFontPrintf(ry, 192, 121, 0xFF0000FF, "GAME OVER");
+            end_frame();
+            if(f > 120){
+                death = 0;
+                init(&player, obstacles, &h);
+                score = 0;
+                f = 0;
+            }
+            continue;
+        }
 
         h.p_vel.x = 0;
         if(player.x < (float)SCREEN_WIDTH / 4)
@@ -156,25 +139,26 @@ int main() {
    
         h.p_vel.y += 1000 * dt;
 
-        if(pad.Buttons & PSP_CTRL_CROSS && player.y + 1 > SCREEN_HEIGHT - player.height) {
+        if(pad.Buttons & PSP_CTRL_CROSS && player.y + 1 > SCREEN_HEIGHT - player.h) {
             h.p_vel.y = -300;
-        }else if(pad.Buttons & PSP_CTRL_DOWN && player.y + 1 > SCREEN_HEIGHT - player.height) {
-            player.height = 18;
+        }else if(pad.Buttons & PSP_CTRL_DOWN && player.y + 1 > SCREEN_HEIGHT - player.h) {
+            player.h = 18;
             player.y = 254;
         } else {
-            player.height = 27;
+            player.h = 27;
         }
 
         player.x += h.p_vel.x  * dt;
         player.y += h.p_vel.y * dt;
         
-        if(player.y + player.height > SCREEN_HEIGHT) {
-            player.y = SCREEN_HEIGHT - player.height;
+        if(player.y + player.h > SCREEN_HEIGHT) {
+            player.y = SCREEN_HEIGHT - player.h;
         }
         
         for(int i = 0; i < 3; i++){
             obstacles[i].x -= h.o_vel * dt;
-            if(obstacles[i].x + obstacles[i].width < 0) {
+            if(obstacles[i].x + obstacles[i].w < 0) {
+                score += 10;
                 float tmp = get_random(200, 300);
                 obstacles[i].x = obstacles[h.o_index].x + tmp;
                 obstacles[i].y = get_y();
@@ -182,34 +166,34 @@ int main() {
                 if(h.o_index > 2){
                     h.o_index = 0;
                 }
+                if(!(score%100) && score > 0) {
+                    h.o_vel += 10;
+                    h.min += 3;
+                }
             }
         }
 
-        sceGuStart(GU_DIRECT, list);
-        
-         
-        sceGuClearColor(RAYWHITE);
-        sceGuClear(GU_COLOR_BUFFER_BIT);
-
-        draw_rectangle(&player, GREEN);
+        start_frame(list);
+        sceGuDisable(GU_DEPTH_TEST);
+        sceGuDisable(GU_TEXTURE_2D);
+ 
+        clear(RAYWHITE);
+        draw_rectangle_rec(player, GREEN);
 
         for(int i = 0; i < 3; i++){
-            draw_rectangle(&obstacles[i], BLACK);
+            draw_rectangle_rec(obstacles[i], BLACK);
         }
-       
         for(int i = 0; i < 3; i++){
             if(CheckCollisionRecs(player, obstacles[i])){
-                init(&player, obstacles, &h);
+                death = 1;
+                //init(&player, obstacles, &h);
+                //score = 0;
             }
         }
-        sceGuFinish();
-        sceGuSync(0, 0);
-        sceDisplayWaitVblankStart();
-        sceGuSwapBuffers();
+        pgeFontActivate(ry);
+        pgeFontPrintf(ry, 5, 10, BLACK, "SCORE %d", score);
+        end_frame();
     }
-
-    sceGuTerm();
-
-    sceKernelExitGame();
+    psp_close();
     return 0;
 }

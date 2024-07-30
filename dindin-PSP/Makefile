@@ -1,6 +1,6 @@
-OBJS = main.o callbacks.o 
+OBJS = main.o callbacks.o pgeFont.o graphics.o
 CFLAGS = -Wall -Wextra 
-LIBS = -lpspgu -lpspgum 
+LIBS = -lpspgu -lpspgum -lfreetype
 ASFLAGS = $(CFLAGS)
 
 EXTRA_TARGETS = EBOOT.PBP

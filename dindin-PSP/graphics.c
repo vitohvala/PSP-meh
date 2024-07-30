@@ -487,29 +487,10 @@ void clear(unsigned int Color) {
     sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT | GU_STENCIL_BUFFER_BIT);
 }
 
-u32 frames = 0;
-float ts = 0;
-
-int get_fps() {
-    ts += get_frame_time();
-
-    int fps = 0;
-    if(ts > 1.0f) {
-        fps = frames / (int)ts;
-        frames = 0;
-        ts = 0;
-    }
-    return fps;
-}
-
-
 float get_frame_time(){
     u64 tick;
     static u64 last_tick;
     sceRtcGetCurrentTick(&tick);
-
-    frames++;
-
     float dt = (tick - last_tick) / (float)sceRtcGetTickResolution();
     last_tick = tick;
     return dt;

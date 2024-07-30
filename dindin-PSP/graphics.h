@@ -1,6 +1,7 @@
 #ifndef _GRAPHICS_H_
 #define _GRAPHICS_H_
 
+#include "psptypes.h"
 #include <pspkernel.h>
 #include <pspgu.h>
 #include <pspgum.h>
@@ -78,6 +79,7 @@ typedef enum{
 } InitOptions; 
 
 void draw_rectangle(float x, float y, float width, float height, unsigned int color);
+void draw_rectangle_rec(ScePspFRect rec, unsigned int color);
 Mesh *create_mesh(u32 vcount, u32 index_count, size_t size_vertex);
 Vertex create_vert(float u, float v, unsigned int color, float x, float y, float z);
 Sprite *create_sprite(float x, float y, float sx, float sy, Texture *tex);
@@ -107,5 +109,6 @@ void draw_tilemap(Tilemap *t);
 void build_tilemap(Tilemap *t);
 void draw_text(Tilemap *t, const char *src);
 void psp_close();
+int get_fps();
 
 #endif
